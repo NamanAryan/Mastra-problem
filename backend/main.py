@@ -89,6 +89,20 @@ class AnalysisResponse(BaseModel):
     transactions: List[TransactionResponse]
     statistics: dict
 
+class NoteCreate(BaseModel):
+    entity_type: str  # "project", "wallet", "pattern"
+    entity_id: str
+    content: str
+
+class NoteResponse(BaseModel):
+    id: str
+    project_id: str
+    entity_type: str
+    entity_id: str
+    content: str
+    created_by: str
+    created_at: str
+
 # Dependency to get current user from JWT and create user-specific client
 async def get_current_user(authorization: str = Header(...)):
     if not authorization:
@@ -769,6 +783,134 @@ async def get_project_analysis(project_id: str, auth_context = Depends(get_curre
         }
     except Exception as e:
         print(f"❌ Error fetching analysis: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/notes")
+async def create_note(
+    project_id: str = Form(...),
+    entity_type: str = Form(...),
+    entity_id: str = Form(...),
+    content: str = Form(...),
+    auth_context = Depends(get_current_user)
+):
+    """Create a new note for an investigation entity"""
+    try:
+        user = auth_context["user"]
+        user_supabase = auth_context["supabase"]
+        user_id = user.user.id
+        
+        # Validate entity_type
+        if entity_type not in ["project", "wallet", "pattern"]:
+            raise HTTPException(status_code=400, detail="Invalid entity_type")
+        
+        # Verify project ownership
+        project = user_supabase.table('projects').select("id").eq('id', project_id).eq('user_id', user_id).execute()
+        if not project.data:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Create note
+        note_data = {
+            "project_id": project_id,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "content": content,
+            "created_by": user_id,
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        response = user_supabase.table('notes').insert(note_data).execute()
+        created_note = response.data[0]
+        
+        print(f"✓ Note created: {entity_type}/{entity_id}")
+        return {
+            "id": created_note['id'],
+            "project_id": created_note['project_id'],
+            "entity_type": created_note['entity_type'],
+            "entity_id": created_note['entity_id'],
+            "content": created_note['content'],
+            "created_by": created_note['created_by'],
+            "created_at": created_note['created_at']
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error creating note: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/notes")
+async def get_notes(
+    project_id: str,
+    entity_type: Optional[str] = None,
+    entity_id: Optional[str] = None,
+    auth_context = Depends(get_current_user)
+):
+    """Get notes for a specific entity or project"""
+    try:
+        user = auth_context["user"]
+        user_supabase = auth_context["supabase"]
+        user_id = user.user.id
+        
+        # Verify project ownership
+        project = user_supabase.table('projects').select("id").eq('id', project_id).eq('user_id', user_id).execute()
+        if not project.data:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Build query
+        query = user_supabase.table('notes').select("*").eq('project_id', project_id)
+        
+        if entity_type and entity_id:
+            query = query.eq('entity_type', entity_type).eq('entity_id', entity_id)
+        
+        response = query.order('created_at', desc=False).execute()
+        
+        notes = []
+        for note in response.data:
+            notes.append({
+                "id": note['id'],
+                "project_id": note['project_id'],
+                "entity_type": note['entity_type'],
+                "entity_id": note['entity_id'],
+                "content": note['content'],
+                "created_by": note['created_by'],
+                "created_at": note['created_at']
+            })
+        
+        print(f"✓ Retrieved {len(notes)} notes for {entity_type or 'project'}")
+        return notes
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error fetching notes: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/notes/{note_id}")
+async def delete_note(note_id: str, auth_context = Depends(get_current_user)):
+    """Delete a note (only creator can delete)"""
+    try:
+        user = auth_context["user"]
+        user_supabase = auth_context["supabase"]
+        user_id = user.user.id
+        
+        # Verify ownership
+        note = user_supabase.table('notes').select("*").eq('id', note_id).eq('created_by', user_id).execute()
+        if not note.data:
+            raise HTTPException(status_code=404, detail="Note not found or not authorized")
+        
+        # Delete note
+        user_supabase.table('notes').delete().eq('id', note_id).execute()
+        
+        print(f"✓ Note deleted: {note_id}")
+        return {"message": "Note deleted"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error deleting note: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

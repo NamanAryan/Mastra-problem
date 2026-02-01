@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import GraphVisualization from "../components/GraphVisualization";
+import NotesPanel from "../components/NotesPanel";
 import type { Project, AnalysisResult } from "../types";
 import { ArrowLeft } from "lucide-react";
 
@@ -831,8 +832,8 @@ export default function Dashboard() {
     <>
       {/* Investigation Header */}
       <header className="sticky top-0 z-50 border-b border-zinc-800/60 bg-black/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="w-full px-8 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/projects")}
               className="text-gray-400 hover:text-white transition-all duration-200 flex items-center gap-2"
@@ -840,15 +841,10 @@ export default function Dashboard() {
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-semibold">Back</span>
             </button>
-            <div className="h-5 w-px bg-zinc-700/70" />
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {project?.name || "Operation Dark Flow"}
-              </h1>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Investigating suspicious fund movements across DeFi protocols
-              </p>
-            </div>
+            <div className="h-8 w-px bg-zinc-700/70" />
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {project?.name || "Operation Dark Flow"}
+            </h1>
           </div>
 
           <div className="flex items-center gap-6 text-xs text-gray-400">
@@ -873,9 +869,17 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="flex flex-col h-[calc(100vh-80px)]">
+      <main className="flex flex-col h-[calc(100vh-80px)] relative overflow-hidden">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/20 via-black to-purple-950/20"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-900/10 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-purple-900/10 via-transparent to-transparent"></div>
+
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,136,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,136,0.02)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+
         {/* Transaction Graph Panel */}
-        <section className="flex-[4] px-3 py-3 min-h-0">
+        <section className="flex-[4] px-3 py-3 min-h-0 relative z-10">
           <div className="h-full bg-gradient-to-b from-zinc-900/30 to-black/30 border border-zinc-800/60 rounded-2xl overflow-hidden flex flex-col">
             <div className="px-5 py-3 border-b border-zinc-800/60 text-xs uppercase tracking-wider text-gray-500">
               Transaction Network
@@ -904,8 +908,8 @@ export default function Dashboard() {
         </section>
 
         {/* Bottom Analysis Panels */}
-        <section className="flex-[1.5] px-8 py-6 pb-12 overflow-y-auto">
-          <div className="grid lg:grid-cols-[1fr_2.5fr] gap-8">
+        <section className="flex-[1.5] px-8 py-6 pb-12 overflow-y-auto relative z-10">
+          <div className="grid lg:grid-cols-[1fr_2.5fr_1fr] gap-8">
             {/* Left: Combined Patterns & Stats */}
             <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-5 flex flex-col gap-5">
               <h3 className="text-sm font-semibold tracking-wide text-gray-200">
@@ -1317,6 +1321,34 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* Right: Notes Panel */}
+            {projectId && (
+              <NotesPanel
+                projectId={projectId}
+                entityType={
+                  selectedPattern
+                    ? "pattern"
+                    : selectedWallet
+                      ? "wallet"
+                      : "project"
+                }
+                entityId={
+                  selectedPattern
+                    ? `${selectedPattern.type}-${selectedPattern.walletHash}`
+                    : selectedWallet
+                      ? selectedWallet.hash
+                      : projectId
+                }
+                entityLabel={
+                  selectedPattern
+                    ? selectedPattern.type
+                    : selectedWallet
+                      ? selectedWallet.hash
+                      : undefined
+                }
+              />
+            )}
           </div>
         </section>
       </main>

@@ -45,17 +45,32 @@ CREATE TABLE IF NOT EXISTS analyses (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Notes table (investigation documentation)
+CREATE TABLE IF NOT EXISTS notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    entity_type TEXT NOT NULL CHECK (entity_type IN ('project', 'wallet', 'pattern')),
+    entity_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_wallets_project_id ON wallets(project_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_project_id ON transactions(project_id);
 CREATE INDEX IF NOT EXISTS idx_analyses_project_id ON analyses(project_id);
+CREATE INDEX IF NOT EXISTS idx_notes_project_id ON notes(project_id);
+CREATE INDEX IF NOT EXISTS idx_notes_entity ON notes(project_id, entity_type, entity_id);
 
 -- Enable RLS (Row Level Security)
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analyses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for projects
 CREATE POLICY projects_select ON projects FOR SELECT
@@ -102,3 +117,24 @@ CREATE POLICY analyses_insert ON analyses FOR INSERT
     WITH CHECK (project_id IN (
         SELECT id FROM projects WHERE user_id = auth.uid()
     ));
+
+-- RLS Policies for notes (access through project)
+DROP POLICY IF EXISTS notes_select ON notes;
+CREATE POLICY notes_select ON notes FOR SELECT
+    USING (project_id IN (
+        SELECT id FROM projects WHERE user_id = auth.uid()
+    ));
+
+DROP POLICY IF EXISTS notes_insert ON notes;
+CREATE POLICY notes_insert ON notes FOR INSERT
+    WITH CHECK (
+        project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+        AND created_by = auth.uid()
+    );
+
+DROP POLICY IF EXISTS notes_delete ON notes;
+CREATE POLICY notes_delete ON notes FOR DELETE
+    USING (
+        project_id IN (SELECT id FROM projects WHERE user_id = auth.uid())
+        AND created_by = auth.uid()
+    );

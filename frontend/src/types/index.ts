@@ -39,3 +39,13 @@ export interface AnalysisResult {
     totalVolume: number;
   };
 }
+
+export interface Note {
+  id: string;
+  project_id: string;
+  entity_type: 'project' | 'wallet' | 'pattern';
+  entity_id: string;
+  content: string;
+  created_by: string;
+  created_at: string;
+}

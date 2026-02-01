@@ -570,9 +570,6 @@ export function ProjectsPage() {
 
             {/* Right Section */}
             <div className="flex items-center gap-4">
-              <div className="px-3 py-1.5 rounded-full border border-[#00ff88]/20 bg-[#00ff88]/5 text-xs text-[#00ff88] font-mono font-semibold">
-                v2.4.1
-              </div>
               <button
                 onClick={handleLogout}
                 disabled={loggingOut}
@@ -959,7 +956,7 @@ export function ProjectsPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Tornado Cash Mixer Analysis"
+                  placeholder="Project Title"
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   disabled={creating}
@@ -969,13 +966,12 @@ export function ProjectsPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Description{" "}
-                  <span className="text-gray-600 font-normal">(optional)</span>
+                  Description
                 </label>
                 <textarea
-                  placeholder="Describe the investigation scope and objectives..."
                   value={newProjectDescription}
                   onChange={(e) => setNewProjectDescription(e.target.value)}
+                  placeholder="Brief description of the investigation project"
                   disabled={creating}
                   rows={3}
                   className="w-full bg-black/50 border border-zinc-700/50 text-white placeholder-gray-600 px-4 py-3 rounded-lg focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/50 disabled:opacity-50 transition-all duration-200 resize-none"
@@ -984,21 +980,30 @@ export function ProjectsPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Upload CSV{" "}
-                  <span className="text-gray-600 font-normal">(optional)</span>
+                  Upload CSV
                 </label>
                 <div className="relative">
                   <input
                     type="file"
+                    id="csv-upload"
                     accept=".csv"
                     onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
                     disabled={creating}
-                    className="w-full bg-black/50 border border-zinc-700/50 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-[#00ff88] focus:ring-1 focus:ring-[#00ff88]/50 disabled:opacity-50 transition-all duration-200 file:mr-3 file:py-1 file:px-2 file:bg-[#00ff88]/20 file:border file:border-[#00ff88]/50 file:rounded file:text-xs file:font-semibold file:text-[#00ff88] file:cursor-pointer"
+                    className="hidden"
                   />
+                  <label
+                    htmlFor="csv-upload"
+                    className="w-full bg-black/50 border border-zinc-700/50 hover:border-[#00ff88]/50 text-gray-400 hover:text-white px-4 py-3 rounded-lg transition-all duration-200 cursor-pointer flex items-center justify-between disabled:opacity-50"
+                  >
+                    <span className="text-sm">
+                      {csvFile ? csvFile.name : "Choose CSV file..."}
+                    </span>
+                    <Upload className="w-4 h-4" />
+                  </label>
                 </div>
                 {csvFile && (
                   <p className="text-xs text-[#00ff88] mt-2 flex items-center gap-1">
-                    ✓ {csvFile.name}
+                    ✓ File selected
                   </p>
                 )}
                 <p className="text-xs text-gray-600 mt-2">
