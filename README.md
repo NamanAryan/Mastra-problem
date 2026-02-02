@@ -182,16 +182,3 @@ Designed for **audit reports and compliance reviews**.
 ✅ Analyst dashboard complete  
 ✅ Explainability & evidence layer complete  
 
-**Demo-ready. Judge-ready. Resume-ready.**
-
----
-
-## 👤 Author
-
-**Naman Aryan**  
-B.Tech | Full-Stack & AI Systems  
-Focused on RegTech, Graph Analysis & Explainable AI
-
----
-
-> ChainSleuth turns blockchain chaos into compliance clarity.
